@@ -3,7 +3,10 @@ using MagicVilla_VillaAPI.Models;
 using MagicVilla_VillaAPI.Models.DTO;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Logging;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MagicVilla_VillaAPI.Controllers
 {
@@ -11,12 +14,18 @@ namespace MagicVilla_VillaAPI.Controllers
     [ApiController]
     public class VillaAPIController : ControllerBase
     {
+        public ApplicationDbContext _Context { get; set; }
+        public VillaAPIController(ApplicationDbContext context)
+        {
+            _Context = context;
+        }
+
         [ProducesResponseType(StatusCodes.Status200OK)]
 
         [HttpGet]
         public ActionResult<IEnumerable<VillaDto>> GetVillas()
         {
-            return Ok(VillaStore.VillList);
+            return Ok(_Context.villas.ToList());
         }
         [HttpGet("{id:int}", Name = "GetVilla")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -28,7 +37,7 @@ namespace MagicVilla_VillaAPI.Controllers
             {
                 return BadRequest();
             }
-            var villa = VillaStore.VillList.FirstOrDefault(u => u.Id == id);
+            var villa = _Context.villas.FirstOrDefault(u => u.Id == id);
             if (villa == null)
             {
                 return NotFound();
@@ -41,7 +50,7 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public ActionResult<VillaDto> CreateVilla([FromBody] VillaDto villaDto)
         {
-            if (VillaStore.VillList.FirstOrDefault(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
+            if (_Context.villas.FirstOrDefault(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomErorr", "Villa already Exist!");
                 return BadRequest(ModelState);
@@ -56,8 +65,20 @@ namespace MagicVilla_VillaAPI.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            villaDto.Id = VillaStore.VillList.OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
-            VillaStore.VillList.Add(villaDto);
+            Villa model = new Villa()
+            {
+                Amenity = villaDto.Amenity,
+                Details = villaDto.Details,
+                Id = villaDto.Id,
+                ImageUrl = villaDto.ImageUrl,
+                Name = villaDto.Name,
+                Occupancy = villaDto.Occupancy,
+                Rate = villaDto.Rate,
+                Sqft = villaDto.Sqft
+            };
+
+            _Context.villas.Add(model);
+            _Context.SaveChanges();
             return CreatedAtRoute("GetVilla", new { id = villaDto.Id }, villaDto);
         }
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -70,28 +91,38 @@ namespace MagicVilla_VillaAPI.Controllers
             {
                 return BadRequest();
             }
-            var villa = VillaStore.VillList.FirstOrDefault(u => u.Id == id);
+            var villa = _Context.villas.FirstOrDefault(u => u.Id == id);
             if (villa == null)
             {
                 return NotFound();
             }
-            VillaStore.VillList.Remove(villa);
+           _Context.villas.Remove(villa);
+            _Context.SaveChanges();
             return NoContent();
         }
 
         [HttpPut("{id:int}", Name = "UpdateVilla")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult UpdateVilla(int id, VillaDto villaDto)
+        public IActionResult UpdateVilla(int id, [FromBody]VillaDto villaDto)
         {
-            if (villaDto != null || id != villaDto.Id)
+            if (villaDto == null || id != villaDto.Id)
             {
                 return BadRequest();
             }
-            var villa = VillaStore.VillList.FirstOrDefault(u => u.Id == id);
-            villa.Name = villaDto.Name;
-            villa.Occupancy = villaDto.Occupancy;
-            villa.Sqft = villaDto.Sqft;
+            Villa model = new Villa()
+            {
+                Amenity = villaDto.Amenity,
+                Details = villaDto.Details,
+                Id = villaDto.Id,
+                ImageUrl = villaDto.ImageUrl,
+                Name = villaDto.Name,
+                Occupancy = villaDto.Occupancy,
+                Rate = villaDto.Rate,
+                Sqft = villaDto.Sqft
+            };
+            _Context.villas.Update(model);
+            _Context.SaveChanges();
             return NoContent();
         }
         [HttpPatch("{id:int}", Name = "UpdatePartialVilla")]
@@ -103,12 +134,36 @@ namespace MagicVilla_VillaAPI.Controllers
             {
                 return BadRequest();
             }
-            var villa = VillaStore.VillList.FirstOrDefault(u => u.Id == id);
+            var villa = _Context.villas.AsNoTracking().FirstOrDefault(u => u.Id == id);
+            VillaDto villaDto = new VillaDto()
+            {
+                Amenity = villa.Amenity,
+                Details = villa.Details,
+                Id = villa.Id,
+                ImageUrl = villa.ImageUrl,
+                Name = villa.Name,
+                Occupancy = villa.Occupancy,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft
+            };
             if (villa == null)
             {
                 return BadRequest();
             }
-            PatchDto.ApplyTo(villa, ModelState);
+            PatchDto.ApplyTo(villaDto, ModelState);
+            Villa model = new Villa()
+            {
+                Amenity = villa.Amenity,
+                Details = villa.Details,
+                Id = villa.Id,
+                ImageUrl = villa.ImageUrl,
+                Name = villa.Name,
+                Occupancy = villa.Occupancy,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft
+            };
+            _Context.Update(model);
+            _Context.SaveChanges();
             if (ModelState == null)
             {
                 return BadRequest();
