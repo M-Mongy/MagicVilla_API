@@ -6,10 +6,11 @@ namespace MagicVilla_VillaAPI.Models.DTO
     public class VillaNumberDtoUpdate
     {
         [Required]
-    
-        public int VillaNo { get; set; }
+        public int VillaNo { get; set; } // CORRECTED: Consistent PascalCase naming
+
         [Required]
-        public int VillaId { get; set; }
+        public int VillaID { get; set; }
+
         public string SpecialDetails { get; set; }
     }
 }
