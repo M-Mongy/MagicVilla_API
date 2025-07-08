@@ -31,6 +31,10 @@ namespace MagicVilla_VillaAPI.Controllers
 
 
         [HttpGet]
+<<<<<<< HEAD
+=======
+        [Authorize]
+>>>>>>> ce56cceb9aaa0cc575bd07bc492277968468ea21
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status200OK)]
