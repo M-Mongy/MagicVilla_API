@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,7 @@ builder.Services.AddScoped<IVillaReository, VillaRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IVillaNumberRepository, VillaNumberRepository>();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
+builder.Services.AddResponseCaching();
 
 var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
 // 2. Configure the authentication services.
@@ -49,6 +51,10 @@ builder.Services.AddAuthentication(x =>
     };
 });
 builder.Services.AddControllers(option => {
+    option.CacheProfiles.Add("Default30", new CacheProfile()
+    {
+        Duration = 30
+    });
     //option.ReturnHttpNotAcceptable=true;
 }).AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
