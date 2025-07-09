@@ -9,20 +9,17 @@ namespace MagicVilla_VillaAPI
     {
         public MappingConfig()
         {
-            CreateMap<Villa, VillaDto>().ReverseMap();
+            CreateMap<Villa, VillaDto>();
+            CreateMap<VillaDto, Villa>();
+
             CreateMap<Villa, VillaCreateDTO>().ReverseMap();
             CreateMap<Villa, VillaUpdateDTO>().ReverseMap();
 
-            // ==================== THIS IS THE FIX ====================
-            // This section explicitly tells AutoMapper how to map the 
-            // VillaNumber models and DTOs, ensuring the properties match.
+            CreateMap<VillaNumber, VillaNumberDto>().ReverseMap();
+            CreateMap<VillaNumber, VillaNumberDtoCreate>().ReverseMap();
+            CreateMap<VillaNumber, VillaNumberDtoUpdate>().ReverseMap();
 
-            // Mapping from VillaNumber (database model) to VillaNumberDTO (API response)
-            CreateMap<VillaNumber, VillaNumberDto>();
-
-            // Mapping from DTOs (API request) to the VillaNumber model
-            CreateMap<VillaNumberDtoCreate, VillaNumber>();
-            CreateMap<VillaNumberDtoUpdate, VillaNumber>();
+            CreateMap<ApplicationUser, UserDTO>().ReverseMap();
         }
     }
 }

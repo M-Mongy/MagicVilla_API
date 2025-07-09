@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using MagicVilla_Utility;
@@ -37,9 +38,22 @@ namespace MagicVilla_Web.Controllers
             {
                 LoginResponseDTO login = JsonConvert.DeserializeObject<LoginResponseDTO>(Convert.ToString(response.Result));
 
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(login.Token);
+
+
                 var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-                identity.AddClaim(new Claim(ClaimTypes.Name, login.User.Name));
-                identity.AddClaim(new Claim(ClaimTypes.Role, login.User.Role));
+                var nameClaim = jwt.Claims.FirstOrDefault(u => u.Type == "name");
+                if (nameClaim != null)
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Name, nameClaim.Value));
+                }
+
+                var roleClaim = jwt.Claims.FirstOrDefault(u => u.Type == "role");
+                if (roleClaim != null)
+                {
+                    identity.AddClaim(new Claim(ClaimTypes.Role, roleClaim.Value));
+                }
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
@@ -64,13 +78,21 @@ namespace MagicVilla_Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegistrationRequestDTO obj)
         {
-            APIResponse result= await _auth.registerAsync<APIResponse>(obj);
-            if(result !=null && result.IsSuccess)
+            APIResponse result = await _auth.registerAsync<APIResponse>(obj);
+            if (result != null && result.IsSuccess)
             {
                 return RedirectToAction("Login");
             }
-            return View();
-        }
+
+            // Add this to show the error message to the user!
+            if (result?.ErrorMessages?.Count > 0)
+            {
+                ModelState.AddModelError("CustomError", result.ErrorMessages.FirstOrDefault());
+            }
+
+            // Pass the model back to the view to keep the user's input
+            return View(obj);
+        } 
 
         public async Task<IActionResult> logout()
         {
